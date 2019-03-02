@@ -1,0 +1,50 @@
+def blur(a):
+       '''This function creates a blurring mechanism for a 3x3 kernel '''
+       kernel = np.array([[1.0,2.0,1.0], [2.0,4.0,2.0], [1.0,2.0,1.0]]) # this is the weigning score for a 3X3 kernel
+       kernel = kernel / np.sum(kernel)
+       arraylist = []
+       for y in range(3):
+           temparray = np.copy(a)
+           temparray = np.roll(temparray, y - 1, axis=0)
+           #we roll over the edge for the weighing calculation which is acceptable because the digit is in the center of the image.
+           for x in range(3):
+               temparray_X = np.copy(temparray)
+               temparray_X = np.roll(temparray_X, x - 1, axis=1)*kernel[y,x]
+               arraylist.append(temparray_X)
+
+       arraylist = np.array(arraylist)
+       arraylist_sum = np.sum(arraylist, axis=0)
+       return arraylist_sum
+
+   def blur_array(array):
+       '''This function runs the "blur" function above through each array'''
+       mylist=[]
+       for i in range(0,array.shape[0]):
+           x=np.reshape(array[i],(28,28)) # reshape the data so the "blur" function can be applied
+           y=blur(x).reshape(784,) #then we apply 'blur' to individual array items
+           mylist.append(y) #append the blurred array item to a list
+           blurred_array=np.array(mylist) # then turn the list into a numpy array
+       return blurred_array
+
+
+   print("---Below is the accuracy using the self-constructed guassian filter---\n")
+
+   model0= KNeighborsClassifier(n_neighbors=5)
+   model0.fit(mini_train_data, mini_train_labels)
+   predict0 = model0.predict(dev_data)
+   print("The accuracy score (k=5) for no reprocessing is", accuracy_score(dev_labels, predict0))
+
+   model1= KNeighborsClassifier(n_neighbors=5)
+   model1.fit(blur_array(mini_train_data), mini_train_labels)
+   predict1 = model1.predict(dev_data)
+   print("The accuracy score (k=5) for reprocessing training but not the dev data is", accuracy_score(dev_labels, predict1))
+
+   model2= KNeighborsClassifier(n_neighbors=5)
+   model2.fit(mini_train_data, mini_train_labels)
+   predict2 = model1.predict(blur_array(dev_data))
+   print("The accuracy score (k=5) for reprocessing the dev data but not the training data is", accuracy_score(dev_labels, predict2))
+
+   model3= KNeighborsClassifier(n_neighbors=5)
+   model3.fit(blur_array(mini_train_data), mini_train_labels)
+   predict3 = model1.predict(blur_array(dev_data))
+   print("The accuracy score (k=5) for reprocessing both the dev data and the training data is", accuracy_score(dev_labels, predict3))
